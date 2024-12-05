@@ -1,74 +1,242 @@
+/******************************************************************************
+
+                            Online Java Compiler.
+                Code, Compile, Run and Debug java program online.
+Write your code in this editor and press "Run" button to execute it.
+
+*******************************************************************************/
 package driver;
 
-public class ShuntngYard {
-	public static String Operators = "+-*/^()";
-	public static String Numbers = "1234567890";
-	
-	public static boolean IsNumber(String input) {
-		for(char c: input.toCharArray()) {
-			if (Numbers.indexOf(c) == -1) {
-				return false;
-			}
-		}
-		return true;
-	}
-	
-	public static int getPrecedence(String input) {
-		char op = input.charAt(0);
-		switch (op) {
-			case '(':
-				return 1;
-			case '+':
-			case '-':
-				return 2;
-			case '*':
-			case '/':
-				return 3;
-			case '^':
-				return 4;
-			case ')':
-				return 5;
-			default:
-				return 0;
-		}			
-	}
+import java.util.Stack;
+import java.util.ArrayList;
 
-	//parse a math expression into a linked list
-    //input: the math expression as a string
-    //parsed result will stored in Token list
-	public static TokenList ParseFromExp(String exp) {
-		TokenList lst = new TokenList();
-		/*
-		 * to do
-		 */
-		return lst;
-	}
-	
-	//take the tokens from Tokens queue, and stored the reversed polish expression in ReversePolish queue
-	public static TokenList BuildFromTokens(TokenList tokenList) {
-		TokenList outputQueue = new TokenList();
-		/*
-	     * 1.  While there are tokens to be read:
-	     * 2.        Read a token
-	     * 3.        If it's a number add it to queue
-	     * 4.        If it's an operator
-	     * 5.               While there's an operator on the top of the stack with greater precedence:
-	     * 6.                       Pop operators from the stack onto the output queue
-	     * 7.               Push the current operator onto the stack
-	     * 8.        If it's a left bracket push it onto the stack
-	     * 9.        If it's a right bracket 
-	     * 10.            While there's not a left bracket at the top of the stack:
-	     * 11.                     Pop operators from the stack onto the output queue.
-	     * 12.             Pop the left bracket from the stack and discard it
-	     * 13. While there are operators on the stack, pop them to the queue
-	     */
-		return outputQueue;
-	}
-	
-	//process use the reverse polish format of expression to process the math result
-	//output: the math result of the expression
-	public static int Process(TokenList queue) {
-		//to do
-		return 0;
-	}
+// token class to represent the tokens 
+class Token 
+{
+    private String type;
+    private String value;
+
+    public Token(String type, String value) 
+    {
+        this.type = type;
+        this.value = value;
+    }
+
+    public String getType() 
+    {
+        return type;
+    }
+
+    public String getValue() 
+    {
+        return value;
+    }
+}
+
+// TokenList class to represent a list of tokens
+class TokenList extends ArrayList<Token> 
+{
+    //literally just to inherit from Arraylist
+}
+
+// Shunting Yard class
+public class ShuntingYard 
+{
+    //declare vars to use
+    public static String Operators = "+-*/^()";
+    public static String Numbers = "1234567890";
+
+    // checks  if a string is number
+    public static boolean IsNumber(String input) 
+    {
+        for (char c : input.toCharArray()) 
+        {
+            if (Numbers.indexOf(c) == -1) 
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // returns the precedence of operators 
+    public static int getPrecedence(String input) 
+    {
+        char op = input.charAt(0);
+        
+        switch (op) 
+        {
+            case '(':
+                return 1;
+                
+            case '+':
+                
+            case '-':
+                return 2;
+                
+            case '*':
+                
+            case '/':
+                return 3;
+                
+            case '^':
+                return 4;
+                
+            case ')':
+                return 5;
+                
+            default:
+                return 0;
+                
+                
+        }
+    }
+
+    // prase the expression into a list of tokens
+    public static TokenList ParseFromExp(String exp) 
+    {
+        TokenList lst = new TokenList();
+        
+        StringBuilder token = new StringBuilder();
+
+        for (int i = 0; i < exp.length(); i++) 
+        {
+            char c = exp.charAt(i);
+
+            // handle numbers
+            if (Character.isDigit(c)) 
+            {
+                token.append(c);
+            } 
+            else 
+            {
+                if (token.length() > 0) 
+                {
+                    lst.add(new Token("NUMBER", token.toString()));
+                    token.setLength(0);
+                }
+                // andle operators and parentheses
+                if (Operators.indexOf(c) != -1) 
+                {
+                    lst.add(new Token("OPERATOR", String.valueOf(c)));
+                }
+            }
+        }
+
+        if (token.length() > 0) 
+        {
+            lst.add(new Token("NUMBER", token.toString()));
+        }
+
+        return lst;
+    }
+
+    // converts an to reverse polisnh 
+    public static TokenList BuildFromTokens(TokenList tokenList) 
+    {
+        TokenList outputQueue = new TokenList();
+        Stack<Token> operatorStack = new Stack<>();
+
+        for (Token token : tokenList) 
+        {
+            String type = token.getType();
+            String value = token.getValue();
+
+            if (type.equals("NUMBER")) 
+            {
+                outputQueue.add(token); // add numbers to output queue
+            } 
+            else if (type.equals("OPERATOR")) 
+            {
+                while (!operatorStack.isEmpty() && getPrecedence(operatorStack.peek().getValue()) >= getPrecedence(value)) 
+                {
+                    outputQueue.add(operatorStack.pop()); // pop operators with higher precedence
+                }
+                operatorStack.push(token); // push the curr onto stack
+            } 
+            else if (value.equals("(")) 
+            {
+                operatorStack.push(token); 
+            } 
+            else if (value.equals(")")) 
+            {
+                while (!operatorStack.peek().getValue().equals("(")) 
+                {
+                    outputQueue.add(operatorStack.pop()); // popp operators until left parenthesis
+                }
+                operatorStack.pop(); // pop the left parenthesies 
+            }
+        }
+
+        // pop rest from stack
+        while (!operatorStack.isEmpty()) 
+        {
+            outputQueue.add(operatorStack.pop());
+        }
+
+        return outputQueue;
+    }
+
+    // RPN 
+    public static int Process(TokenList queue) 
+    {
+        Stack<Integer> stack = new Stack<>();
+
+        for (Token token : queue) 
+        {
+            String type = token.getType();
+            String value = token.getValue();
+
+            if (type.equals("NUMBER")) 
+            {
+                stack.push(Integer.parseInt(value)); // push numbers onto the stac
+            } 
+            else if (type.equals("OPERATOR")) 
+            {
+                // assign vars
+                int b = stack.pop();
+                int a = stack.pop();
+                int result = 0;
+
+                //switch cases
+                switch (value) 
+                {
+                    case "+":
+                        result = a + b;
+                        break;
+                        
+                    case "-":
+                        result = a - b;
+                        break;
+                        
+                    case "*":
+                        result = a * b;
+                        break;
+                        
+                    case "/":
+                        result = a / b;
+                        break;
+                        
+                    case "^":
+                        result = (int) Math.pow(a, b);
+                        break;
+                        
+                }
+                // push val onto the stack
+                stack.push(result); 
+            }
+        }
+
+        return stack.pop(); // The result is the only value left in the stack
+    }
+
+    // int main equivalent 
+    public static void main(String[] args) 
+    {
+        String expression = "3 + 5 * (2 - 8)";
+        TokenList tokens = ParseFromExp(expression); 
+        TokenList rpn = BuildFromTokens(tokens); 
+        int result = Process(rpn); 
+        System.out.println("Result: " + result); 
+    }
 }
